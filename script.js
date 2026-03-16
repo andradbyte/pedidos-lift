@@ -8,9 +8,16 @@ async function carregarPedidos() {
         let tabela = document.querySelector("#tabelaPedidos tbody");
         tabela.innerHTML = "";
 
-        for (let pedido of pedidos) {
-            let clienteResp = await fetch(API + "Clientes/" + pedido.cliente);
-            let cliente = await clienteResp.json();
+        // buscar todos os clientes ao mesmo tempo
+        let promessasClientes = pedidos.map(pedido =>
+            fetch(API + "Clientes/" + pedido.cliente).then(r => r.json())
+        );
+
+        let clientes = await Promise.all(promessasClientes);
+
+        for (let i = 0; i < pedidos.length; i++) {
+            let pedido = pedidos[i];
+            let cliente = clientes[i];
             let nomeCliente = cliente.nome || pedido.cliente;
 
             let linha = `
@@ -21,8 +28,10 @@ async function carregarPedidos() {
                 <td>Ver detalhes</td>
             </tr>
             `;
+
             tabela.innerHTML += linha;
         }
+
     } catch (erro) {
         console.error("Erro ao carregar pedidos:", erro);
     }
@@ -57,6 +66,7 @@ async function carregarPedido() {
         tabela.innerHTML = "";
 
         let total = 0;
+
         for (let item of itens) {
             let prodResp = await fetch(API + "Produtos/" + item.produto);
             let produto = await prodResp.json();
@@ -75,7 +85,8 @@ async function carregarPedido() {
         }
 
         document.getElementById("total").innerText =
-"Total: R$ " + total.toLocaleString("pt-BR", { minimumFractionDigits: 2 });;
+        "Total: R$ " + total.toLocaleString("pt-BR", { minimumFractionDigits: 2 });
+
     } catch (erro) {
         console.error("Erro ao carregar detalhes do pedido:", erro);
     }
@@ -84,6 +95,7 @@ async function carregarPedido() {
 if (document.getElementById("tabelaPedidos")) {
     carregarPedidos();
 }
+
 if (document.getElementById("itens")) {
     carregarPedido();
 }
